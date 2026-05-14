@@ -1,25 +1,17 @@
-export const ORDER_STATUSES = {
-  NEW: { label: "Новая", color: "blue" },
-  CONFIRMED: { label: "Подтверждена", color: "cyan" },
-  PURCHASING: { label: "Закупка", color: "amber" },
-  PURCHASED: { label: "Куплено", color: "orange" },
-  QUALITY_CHECK: { label: "Проверка качества", color: "yellow" },
-  PACKING: { label: "Упаковка", color: "lime" },
-  IN_TRANSIT: { label: "В пути", color: "emerald" },
-  CUSTOMS: { label: "Таможня", color: "purple" },
-  DELIVERING: { label: "Доставка", color: "indigo" },
-  DELIVERED: { label: "Доставлено", color: "green" },
-  CANCELLED: { label: "Отменена", color: "red" },
+export const ORDER_STATUS = {
+  NEW: { label: "Новая", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300" },
+  APPROVED: { label: "Подтверждена", color: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300" },
+  SHIPPED: { label: "Отправлена", color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300" },
+  DELIVERED: { label: "Доставлена", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" },
+  CANCELLED: { label: "Отменена", color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300" },
 } as const;
 
-export type OrderStatus = keyof typeof ORDER_STATUSES;
+export type OrderStatus = keyof typeof ORDER_STATUS;
 
-export function getStatusInfo(status: string) {
-  return ORDER_STATUSES[status as OrderStatus] || { label: status, color: "gray" };
+export function getStatusLabel(status: string): string {
+  return ORDER_STATUS[status as OrderStatus]?.label || status;
 }
 
-export const STATUS_FLOW: OrderStatus[] = [
-  "NEW", "CONFIRMED", "PURCHASING", "PURCHASED",
-  "QUALITY_CHECK", "PACKING", "IN_TRANSIT", "CUSTOMS",
-  "DELIVERING", "DELIVERED",
-];
+export function getStatusColor(status: string): string {
+  return ORDER_STATUS[status as OrderStatus]?.color || "bg-gray-100 text-gray-800";
+}
