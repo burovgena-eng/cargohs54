@@ -1,8 +1,5 @@
 @import "tailwindcss";
-@source "../components";
-@source "../lib";
-@source "../stores";
-@source "../hooks";
+@config "../../tailwind.config.ts";
 
 @custom-variant dark (&:is(.dark *));
 
