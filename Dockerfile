@@ -12,6 +12,7 @@ RUN bunx prisma generate
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV BUN_JAVA_SCRIPT_HEAP_LIMIT=384MB
 RUN bun run build
 
 FROM oven/bun:1-alpine AS runner
