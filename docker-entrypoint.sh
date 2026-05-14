@@ -7,10 +7,10 @@ mkdir -p "$DB_DIR"
 
 if [ ! -f "$DB_FILE" ]; then
   echo "[entrypoint] Creating database..."
-  npx prisma@6 db push
+  npx prisma db push
 else
   echo "[entrypoint] Syncing schema..."
-  npx prisma@6 db push --accept-data-loss 2>/dev/null || npx prisma@6 db push
+  npx prisma db push --accept-data-loss 2>/dev/null || npx prisma db push
 fi
 
 ROW_COUNT=$(bun -e "
