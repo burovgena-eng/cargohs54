@@ -16,12 +16,12 @@ fi
 
 if [ ! -f "$DB_FILE" ]; then
   echo "[entrypoint] No database found. Running prisma db push..."
-  bunx prisma db push
+  bunx prisma@6 db push
   echo "[entrypoint] Database created successfully."
 else
   echo "[entrypoint] Database exists, syncing schema..."
-bunx prisma db push --accept-data-loss 2>/dev/null || \
-bunx prisma db push
+bunx prisma@6 db push --accept-data-loss>/dev/null || \
+bunx prisma@6 db push
   echo "[entrypoint] Schema synced."
 fi
 
