@@ -20,7 +20,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Generate Prisma client
-RUN npx prisma@6 generate
+RUN npx prisma generate
 
 # Build Next.js (output: standalone in next.config.ts)
 ENV NEXT_TELEMETRY_DISABLED=1
