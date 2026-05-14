@@ -44,22 +44,30 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           if (item.itemPriceCNY !== undefined) u.itemPriceCNY = item.itemPriceCNY;
           if (item.deliveryPriceRUB !== undefined) u.deliveryPriceRUB = item.deliveryPriceRUB;
           if (item.totalPriceRUB !== undefined) u.totalPriceRUB = item.totalPriceRUB;
-          if (Object.keys(u).length > 0) await tx.orderItem.updateMany({ where: { id: item.id, orderId: id }, data: u });
-        });
+          if (Object.keys(u).length > 0) {
+            await tx.orderItem.updateMany({ where: { id: item.id, orderId: id }, data: u });
+          }
+        }
         const all = await tx.orderItem.findMany({ where: { orderId: id }, select: { totalPriceRUB: true, deliveryPriceRUB: true } });
-        await tx.order.update({ where: { id }, data: {
-          totalPriceRUB: all.reduce((s, i) => s + (i.totalPriceRUB || 0), 0) || null,
-          deliveryPriceRUB: all.reduce((s, i) => s + (i.deliveryPriceRUB || 0), 0) || null,
-          ...(body.status && { status: body.status }),
-          ...(body.adminNote !== undefined && { adminNote: body.adminNote }),
-        }});
+        await tx.order.update({
+          where: { id },
+          data: {
+            totalPriceRUB: all.reduce((s, i) => s + (i.totalPriceRUB || 0), 0) || null,
+            deliveryPriceRUB: all.reduce((s, i) => s + (i.deliveryPriceRUB || 0), 0) || null,
+            ...(body.status && { status: body.status }),
+            ...(body.adminNote !== undefined && { adminNote: body.adminNote }),
+          },
+        });
       });
       return NextResponse.json(await db.order.findUnique({ where: { id }, include: { user: { select: { id: true, name: true, email: true } }, items: true } }));
     }
     const updated = await db.order.update({
       where: { id },
-      data: { ...(body.status && { status: body.status }), ...(body.adminNote !== undefined && { adminNote: body.adminNote }),
-        ...(body.totalPriceRUB !== undefined && { totalPriceRUB: body.totalPriceRUB }) },
+      data: {
+        ...(body.status && { status: body.status }),
+        ...(body.adminNote !== undefined && { adminNote: body.adminNote }),
+        ...(body.totalPriceRUB !== undefined && { totalPriceRUB: body.totalPriceRUB }),
+      },
       include: { user: { select: { id: true, name: true, email: true } } },
     });
     return NextResponse.json(updated);
