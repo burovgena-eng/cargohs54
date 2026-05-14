@@ -1,64 +1,28 @@
 #!/bin/sh
 set -e
 
-echo "=========================================="
-echo "[$(date)] CargoHS54 — Starting..."
-echo "=========================================="
-
-# Database init
 DB_FILE="${DATABASE_URL#file:}"
 DB_DIR=$(dirname "$DB_FILE")
-
-if [ ! -d "$DB_DIR" ]; then
-  echo "[entrypoint] Creating database directory: $DB_DIR"
-  mkdir -p "$DB_DIR"
-fi
+mkdir -p "$DB_DIR"
 
 if [ ! -f "$DB_FILE" ]; then
-  echo "[entrypoint] No database found. Running prisma db push..."
-  bunx prisma@6 db push
-  echo "[entrypoint] Database created successfully."
+  echo "[entrypoint] Creating database..."
+  npx prisma@6 db push
 else
-  echo "[entrypoint] Database exists, syncing schema..."
-bunx prisma@6 db push --accept-data-loss>/dev/null || \
-bunx prisma@6 db push
-  echo "[entrypoint] Schema synced."
+  echo "[entrypoint] Syncing schema..."
+  npx prisma@6 db push --accept-data-loss 2>/dev/null || npx prisma@6 db push
 fi
 
-# Seed admin user if DB is fresh
 ROW_COUNT=$(bun -e "
-const { PrismaClient } = require('.prisma/client');
-const db = new PrismaClient();
-db.user.count().then(c => { console.log(c); db.\$disconnect(); }).catch(() => { console.log(0); });
+const{PrismaClient}=require('.prisma/client');const db=new PrismaClient();db.user.count().then(c=>{console.log(c);db.\$disconnect()}).catch(()=>console.log(0))
 " 2>/dev/null || echo "0")
 
 if [ "$ROW_COUNT" = "0" ]; then
-  echo "[entrypoint] Fresh database — seeding admin user..."
+  echo "[entrypoint] Seeding admin user..."
   bun -e "
-const { PrismaClient } = require('.prisma/client');
-const bcrypt = require('bcryptjs');
-const db = new PrismaClient();
-async function seed() {
-  const hash = await bcrypt.hash('admin123', 12);
-  await db.user.create({
-    data: { email: 'admin@cargohs54.ru', name: 'Администратор', passwordHash: hash, role: 'ADMIN' }
-  });
-  const clientHash = await bcrypt.hash('client123', 12);
-  await db.user.create({
-    data: { email: 'test@test.ru', name: 'Тестовый клиент', passwordHash: clientHash, role: 'CLIENT' }
-  });
-  console.log('Seeded: admin@cargohs54.ru + test@test.ru');
-  await db.\$disconnect();
-}
-seed().catch(e => { console.error(e); process.exit(1); });
-"
-else
-  echo "[entrypoint] Database has $ROW_COUNT user(s), skipping seed."
+const{PrismaClient}=require('.prisma/client');const bcrypt=require('bcryptjs');const db=new PrismaClient();
+(async()=>{const h=await bcrypt.hash('admin123',12);await db.user.create({data:{email:'admin@cargohs54.ru',name:'Администратор',passwordHash:h,role:'ADMIN'}});const c=await bcrypt.hash('client123',12);await db.user.create({data:{email:'test@test.ru',name:'Тестовый клиент',passwordHash:c,role:'CLIENT'}});console.log('Seeded');await db.\$disconnect()})().catch(e=>{console.error(e);process.exit(1)})"
 fi
 
-# Start Next.js server
-echo "=========================================="
-echo "[$(date)] Starting Next.js on port ${PORT:-10000}"
-echo "=========================================="
-
+echo "[entrypoint] Starting server..."
 exec bun run .next/standalone/server.js
