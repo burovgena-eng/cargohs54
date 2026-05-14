@@ -20,7 +20,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Generate Prisma client
-RUN bunx prisma generate
+RUN bunx prisma@6 generate
 
 # Build Next.js (output: standalone in next.config.ts)
 ENV NEXT_TELEMETRY_DISABLED=1
