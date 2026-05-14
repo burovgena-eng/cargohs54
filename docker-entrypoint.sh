@@ -13,14 +13,16 @@ if [ ! -d "$DB_DIR" ]; then
   mkdir -p "$DB_DIR"
 fi
 
+PRISMA="./node_modules/prisma/build/index.js"
+
 if [ ! -f "$DB_FILE" ]; then
   echo "[entrypoint] No database found. Running prisma db push..."
-  bunx prisma db push --skip-generate
+  bun $PRISMA db push --skip-generate 2>&1 || bun $PRISMA db push 2>&1
   echo "[entrypoint] Database created successfully."
 else
   echo "[entrypoint] Database exists, syncing schema..."
-  bunx prisma db push --skip-generate --accept-data-loss 2>/dev/null || \
-  bunx prisma db push --skip-generate
+  bun $PRISMA db push --skip-generate --accept-data-loss 2>/dev/null || \
+  bun $PRISMA db push --skip-generate 2>&1
   echo "[entrypoint] Schema synced."
 fi
 
