@@ -1,25 +1,18 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
+import { NextRequest } from "next/server";
+import { db } from "@/lib/db";
 
-export async function getCurrentUser() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return null;
-  return {
-    id: (session.user as { id: string }).id,
-    email: session.user.email,
-    name: session.user.name,
-    role: (session.user as { role: string }).role,
-  };
-}
-
-export async function requireAuth() {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Unauthorized");
-  return user;
-}
-
-export async function requireAdmin() {
-  const user = await requireAuth();
-  if (user.role !== "ADMIN") throw new Error("Forbidden");
-  return user;
+export async function getCurrentUser(req: NextRequest) {
+  try {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) return null;
+    const token = authHeader.slice(7);
+    const session = await db.session.findUnique({
+      where: { sessionToken: token },
+      include: { user: { select: { id: true, name: true, email: true, role: true, phone: true } } },
+    });
+    if (!session || session.expires < new Date()) return null;
+    return session.user;
+  } catch {
+    return null;
+  }
 }
