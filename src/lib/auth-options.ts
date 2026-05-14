@@ -40,3 +40,4 @@ export const authConfig: NextAuthConfig = {
     },
   },
 };
+export const authOptions = authConfig;
