@@ -367,7 +367,7 @@ function ItemCard({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-amber-600 hover:text-amber-800 hover:bg-amber-100 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-900/30 shrink-0"
+                className="h-7 w-7 text-amber-600 hover:text-amber-800 hover:bg-amber-100 dark:text-amber-400 hover:text-amber-300 dark:hover:bg-amber-900/30 shrink-0"
                 onClick={() => onChange({ previewUrl: null, imageUrl: "", imageError: false, imageLoading: false })}
               >
                 <X className="h-4 w-4" />
@@ -521,6 +521,14 @@ export function OrderCreateView() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("[order-create] handleSubmit called, items:", JSON.stringify(items.map(it => ({ title: it.title, qty: it.quantity }))));
+
+    // Validate: first item must have a title
+    if (!items[0].title.trim()) {
+      toast({ title: "Заполните название товара", description: "Название первого товара обязательно", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -539,6 +547,8 @@ export function OrderCreateView() {
         toast({ title: "Заполните название товара", variant: "destructive" });
         return;
       }
+
+      console.log("[order-create] Sending order:", JSON.stringify(mappedItems));
 
       const order = await ordersAPI.createOrder({
         items: mappedItems,
@@ -677,7 +687,7 @@ export function OrderCreateView() {
                 <Button
                   type="submit"
                   className="flex-1 bg-orange-500 hover:bg-orange-600 text-white h-11"
-                  disabled={loading || !items[0].title.trim()}
+                  disabled={loading}
                 >
                   {loading ? (
                     <>
