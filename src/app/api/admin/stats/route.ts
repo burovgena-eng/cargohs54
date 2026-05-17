@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-helpers";
-import { db } from "@/lib/db";
+import { db, ensureDb } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   try {
+    await ensureDb();
     const user = await getCurrentUser(req);
     if (!user || user.role !== "ADMIN") {
       return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
@@ -37,7 +38,6 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    // Orders by status for chart
     const statusCounts = await db.order.groupBy({
       by: ["status"],
       _count: true,
