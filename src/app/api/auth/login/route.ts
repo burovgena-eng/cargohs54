@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, ensureDb } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { encode } from "next-auth/jwt";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
@@ -8,7 +8,8 @@ const JWT_SECRET = process.env.NEXTAUTH_SECRET || "cargohs54-jwt-secret-fallback
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate limiting
+    await ensureDb();
+
     const ip = getClientIP(req);
     const { allowed, retryAfter } = checkRateLimit(ip);
     if (!allowed) {
@@ -20,36 +21,40 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { email, password } = body;
+    const normalizedEmail = email.toLowerCase().trim();
 
-    if (!email || !password) {
+    if (!normalizedEmail || !password) {
       return NextResponse.json(
         { error: "Email и пароль обязательны" },
         { status: 400 }
       );
     }
 
-    // Find user in database
+    console.log(`[login] Attempt: ${normalizedEmail}`);
+
     const user = await db.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: normalizedEmail },
     });
 
     if (!user) {
+      console.log(`[login] User not found: ${normalizedEmail}`);
       return NextResponse.json(
         { error: "Неверный email или пароль" },
         { status: 401 }
       );
     }
 
-    // Validate password
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
+      console.log(`[login] Wrong password for: ${normalizedEmail}`);
       return NextResponse.json(
         { error: "Неверный email или пароль" },
         { status: 401 }
       );
     }
 
-    // Create JWT token
+    console.log(`[login] Success: ${normalizedEmail} (role=${user.role})`);
+
     const token = await encode({
       token: {
         sub: user.id,
@@ -60,7 +65,6 @@ export async function POST(req: NextRequest) {
       secret: JWT_SECRET,
     });
 
-    // Return user data + token in response body (no cookie dependency)
     return NextResponse.json({
       id: user.id,
       email: user.email,
@@ -70,7 +74,7 @@ export async function POST(req: NextRequest) {
       token,
     });
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("[login] Error:", error);
     return NextResponse.json(
       { error: "Ошибка при входе" },
       { status: 500 }
