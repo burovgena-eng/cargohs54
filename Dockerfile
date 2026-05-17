@@ -35,6 +35,8 @@ COPY --from=builder --chown=appuser:nodejs /app/public ./public
 COPY --from=builder --chown=appuser:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=appuser:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=appuser:nodejs /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder --chown=appuser:nodejs /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
+COPY --from=builder --chown=appuser:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=appuser:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 
 COPY --chown=appuser:nodejs docker-entrypoint.sh /app/docker-entrypoint.sh
