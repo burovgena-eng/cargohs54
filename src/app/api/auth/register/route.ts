@@ -15,9 +15,23 @@ export async function POST(req: NextRequest) {
         { status: 429 }
       );
     }
-    const body = await req.json();
-    const { email, name, password, phone, city } = body;
-    const normalizedEmail = email.toLowerCase().trim();
+
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Неверный формат запроса" },
+        { status: 400 }
+      );
+    }
+
+    const email = typeof body.email === "string" ? body.email.trim() : "";
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+    const phone = typeof body.phone === "string" ? body.phone.trim() : undefined;
+    const city = typeof body.city === "string" ? body.city.trim() : undefined;
+    const normalizedEmail = email.toLowerCase();
 
     if (!normalizedEmail || !name || !password) {
       return NextResponse.json(
