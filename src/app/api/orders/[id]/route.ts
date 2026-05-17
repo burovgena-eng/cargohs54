@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-helpers";
-import { db } from "@/lib/db";
+import { db, ensureDb } from "@/lib/db";
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    await ensureDb();
     const user = await getCurrentUser(req);
     if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     const { id } = await params;
@@ -21,8 +25,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   } catch (error) { return NextResponse.json({ error: "Ошибка" }, { status: 500 }); }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    await ensureDb();
     const user = await getCurrentUser(req);
     if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     const { id } = await params;
@@ -74,8 +82,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   } catch (error) { return NextResponse.json({ error: "Ошибка" }, { status: 500 }); }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    await ensureDb();
     const user = await getCurrentUser(req);
     if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     const { id } = await params;
