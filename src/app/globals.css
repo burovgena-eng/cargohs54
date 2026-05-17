@@ -1,9 +1,5 @@
 @import "tailwindcss";
-@plugin "tailwindcss-animate";
-@source "../components";
-@source "../lib";
-@source "../stores";
-@source "../hooks";
+@config "../../tailwind.config.ts";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -128,133 +124,37 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground antialiased;
-  }
-  html {
-    scroll-behavior: smooth;
-  }
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground antialiased; }
+  html { scroll-behavior: smooth; }
 }
 
-.custom-scrollbar {
-  max-height: 24rem;
-  overflow-y: auto;
-}
+.custom-scrollbar { max-height: 24rem; overflow-y: auto; }
+@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+.animate-marquee { animation: marquee 30s linear infinite; }
+@keyframes fade-in-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-in-up { animation: fade-in-up 0.5s ease-out forwards; }
+@keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+.animate-float { animation: float 6s ease-in-out infinite; }
+@keyframes gradient-shift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+.animate-gradient { background-size: 200% 200%; animation: gradient-shift 8s ease infinite; }
+@keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.4; } 100% { transform: scale(1.5); opacity: 0; } }
+.animate-pulse-ring { animation: pulse-ring 2s ease-out infinite; }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.animate-shimmer { background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.08) 50%, transparent 75%); background-size: 200% 100%; animation: shimmer 3s ease-in-out infinite; }
 
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.animate-marquee {
-  animation: marquee 30s linear infinite;
-}
-
-@keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in-up {
-  animation: fade-in-up 0.5s ease-out forwards;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-}
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient-shift 8s ease infinite;
-}
-
-@keyframes pulse-ring {
-  0% { transform: scale(1); opacity: 0.4; }
-  100% { transform: scale(1.5); opacity: 0; }
-}
-.animate-pulse-ring {
-  animation: pulse-ring 2s ease-out infinite;
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-.animate-shimmer {
-  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.08) 50%, transparent 75%);
-  background-size: 200% 100%;
-  animation: shimmer 3s ease-in-out infinite;
-}
-
-.glass {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.glass-light {
-  background: rgba(234, 238, 235, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(209, 215, 211, 0.8);
-}
-.dark .glass-light {
-  background: rgba(17, 22, 20, 0.85);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.text-gradient {
-  background: linear-gradient(135deg, #059669, #10B981, #34D399);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.text-gradient-orange {
-  background: linear-gradient(135deg, #F97316, #FB923C, #FDBA74);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.bg-mesh-hero {
-  background:
-    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(5, 150, 105, 0.15) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(249, 115, 22, 0.1) 0%, transparent 60%),
-    linear-gradient(180deg, #0C1222 0%, #1E293B 100%);
-}
-
-.bg-mesh-light {
-  background:
-    radial-gradient(ellipse 60% 40% at 20% 80%, rgba(5, 150, 105, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 80% 20%, rgba(249, 115, 22, 0.04) 0%, transparent 60%),
-    #E4E8E5;
-}
-.dark .bg-mesh-light {
-  background:
-    radial-gradient(ellipse 60% 40% at 20% 80%, rgba(5, 150, 105, 0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 80% 20%, rgba(249, 115, 22, 0.03) 0%, transparent 60%),
-    #151A17;
-}
-
+.glass { background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.12); }
+.glass-light { background: rgba(234, 238, 235, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(209, 215, 211, 0.8); }
+.dark .glass-light { background: rgba(17, 22, 20, 0.85); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.text-gradient { background: linear-gradient(135deg, #059669, #10B981, #34D399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.text-gradient-orange { background: linear-gradient(135deg, #F97316, #FB923C, #FDBA74); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.bg-mesh-hero { background: radial-gradient(ellipse 80% 60% at 10% 20%, rgba(5, 150, 105, 0.15) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(249, 115, 22, 0.1) 0%, transparent 60%), linear-gradient(180deg, #0C1222 0%, #1E293B 100%); }
+.bg-mesh-light { background: radial-gradient(ellipse 60% 40% at 20% 80%, rgba(5, 150, 105, 0.06) 0%, transparent 60%), radial-gradient(ellipse 40% 30% at 80% 20%, rgba(249, 115, 22, 0.04) 0%, transparent 60%), #E4E8E5; }
+.dark .bg-mesh-light { background: radial-gradient(ellipse 60% 40% at 20% 80%, rgba(5, 150, 105, 0.04) 0%, transparent 60%), radial-gradient(ellipse 40% 30% at 80% 20%, rgba(249, 115, 22, 0.03) 0%, transparent 60%), #151A17; }
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; border-radius: 3px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #B0B8B2; border-radius: 3px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #8A9A8E; }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #3A4A3E; }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4A5A4E; }
-
-::selection {
-  background: rgba(5, 150, 105, 0.2);
-  color: inherit;
-}
+::selection { background: rgba(5, 150, 105, 0.2); color: inherit; }
