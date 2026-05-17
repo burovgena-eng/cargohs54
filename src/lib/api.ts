@@ -1,46 +1,174 @@
 import { useAppStore } from "@/stores/app-store";
 
+const API_BASE = "/api";
+
+/**
+ * Get the Authorization header from the persisted store token.
+ * This is used for all authenticated API requests.
+ */
+function getAuthHeaders(): Record<string, string> {
+  const store = useAppStore.getState();
+  const token = store.token;
+  if (!token) return {};
+  return { Authorization: `Bearer ${token}` };
+}
+
+async function fetchAPI<T>(
+  endpoint: string,
+  options?: RequestInit
+): Promise<T> {
+  const url = `${API_BASE}${endpoint}`;
+  
+  const mergedHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...getAuthHeaders(),
+  };
+
+  // Don't set Content-Type for FormData (browser sets it with boundary)
+  if (options?.body instanceof FormData) {
+    delete mergedHeaders["Content-Type"];
+  }
+
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      ...mergedHeaders,
+      ...(options?.headers as Record<string, string> | undefined),
+    },
+  });
+
+  console.log(`[api] ${options?.method || "GET"} ${endpoint} → ${res.status}`);
+
+  if (!res.ok) {
+    // If 401 — user session expired or invalid
+    if (res.status === 401) {
+      console.log(`[api] 401 on ${endpoint} — logging out`);
+      const store = useAppStore.getState();
+      if (store.user) {
+        store.logout();
+      }
+    }
+    const error = await res.json().catch(() => ({ error: "Ошибка запроса" }));
+    throw new Error(error.error || `Ошибка ${res.status}`);
+  }
+
+  return res.json();
+}
+
+// Auth
+export const authAPI = {
+  register: async (data: {
+    email: string;
+    name: string;
+    password: string;
+    phone?: string;
+    city?: string;
+  }) => {
+    return fetchAPI<{ id: string; email: string; name: string; role: string }>(
+      "/auth/register",
+      { method: "POST", body: JSON.stringify(data) }
+    );
+  },
+
+  login: async (email: string, password: string) => {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: "Ошибка запроса" }));
+      throw new Error(error.error || `Ошибка ${res.status}`);
+    }
+
+    return res.json() as Promise<{
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+      token: string;
+    }>;
+  },
+
+  me: async () => {
+    const res = await fetch(`${API_BASE}/auth/me`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+    });
+
+    if (!res.ok) return null;
+    return res.json() as Promise<{
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+      city?: string;
+    }>;
+  },
+
+  logout: async () => {
+    await fetch(`${API_BASE}/auth/logout`, { method: "POST" });
+  },
+};
+
+// Orders
 export interface OrderUser {
   id: string;
   name: string;
   email: string;
-  phone?: string;
+  city?: string;
 }
 
 export interface OrderItem {
   id: string;
-  name: string;
-  imageUrl?: string;
+  orderId: string;
+  title: string;
+  description?: string;
+  storeUrl?: string;
+  storeName?: string;
   quantity: number;
+  imageUrl?: string;
   itemPriceCNY?: number;
   deliveryPriceRUB?: number;
   totalPriceRUB?: number;
-  note?: string;
-}
-
-export interface Order {
-  id: string;
-  trackingNumber?: string;
-  status: string;
-  totalPriceRUB?: number;
-  deliveryPriceRUB?: number;
-  itemPriceCNY?: number;
-  adminNote?: string;
-  clientNote?: string;
-  items: OrderItem[];
-  messages: Message[];
-  user: OrderUser;
-  userId: string;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface Order {
+  id: string;
+  orderNumber: string;
+  userId: string;
+  title: string;
+  description?: string;
+  status: string;
+  adminNote?: string;
+  deliveryCity?: string;
+  itemPriceCNY?: number;
+  deliveryPriceRUB?: number;
+  totalPriceRUB?: number;
+  imageUrl?: string;
+  storeUrl?: string;
+  storeName?: string;
+  quantity: number;
+  createdAt: string;
+  updatedAt: string;
+  user?: OrderUser;
+  items?: OrderItem[];
+  _count?: { messages: number; items: number };
+  messages?: Message[];
+}
+
 export interface Message {
   id: string;
-  content: string;
-  userId: string;
-  user: { id: string; name: string; role: string };
+  orderId: string;
+  senderId: string;
+  text: string;
   createdAt: string;
+  user: { id: string; name: string; role: string };
 }
 
 export interface OrdersResponse {
@@ -50,182 +178,235 @@ export interface OrdersResponse {
   limit: number;
 }
 
+export const ordersAPI = {
+  getOrders: async (params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<OrdersResponse> => {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set("status", params.status);
+    if (params?.page) searchParams.set("page", String(params.page));
+    if (params?.limit) searchParams.set("limit", String(params.limit));
+    if (params?.search) searchParams.set("search", params.search);
+    const query = searchParams.toString();
+    return fetchAPI<OrdersResponse>(`/orders${query ? `?${query}` : ""}`);
+  },
+
+  getOrder: async (id: string): Promise<Order> => {
+    return fetchAPI<Order>(`/orders/${id}`);
+  },
+
+  createOrder: async (data: {
+    items: {
+      title: string;
+      description?: string;
+      storeUrl?: string;
+      storeName?: string;
+      quantity?: number;
+      imageUrl?: string;
+    }[];
+    deliveryCity?: string;
+  }): Promise<Order> => {
+    return fetchAPI<Order>("/orders", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateOrder: async (
+    id: string,
+    data: Partial<Order>
+  ): Promise<Order> => {
+    return fetchAPI<Order>(`/orders/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteOrder: async (id: string): Promise<void> => {
+    await fetchAPI<{ success: true }>(`/orders/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  getMessages: async (orderId: string): Promise<Message[]> => {
+    return fetchAPI<Message[]>(`/orders/${orderId}/messages`);
+  },
+
+  sendMessage: async (
+    orderId: string,
+    text: string
+  ): Promise<Message> => {
+    return fetchAPI<Message>(`/orders/${orderId}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    });
+  },
+};
+
+// Admin
 export interface AdminStats {
   totalOrders: number;
   newOrders: number;
   inProgressOrders: number;
   completedOrders: number;
+  cancelledOrders: number;
   totalRevenue: number;
+  totalDeliveryRevenue: number;
+  totalClients: number;
+  recentOrders: Order[];
+  statusCounts: { status: string; _count: number }[];
 }
 
 export interface ClientStats {
-  totalOrders: number;
-  newOrders: number;
-  inProgressOrders: number;
-  completedOrders: number;
-  cancelledOrders: number;
+  client: {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    city?: string;
+    createdAt: string;
+  };
+  stats: {
+    totalOrders: number;
+    newOrders: number;
+    activeOrders: number;
+    deliveredOrders: number;
+    cancelledOrders: number;
+    totalSpent: number;
+    totalDeliverySpent: number;
+    totalItems: number;
+    totalMessages: number;
+    avgOrderValue: number;
+    firstOrder: string | null;
+    lastOrder: string | null;
+  };
+  recentOrders: {
+    id: string;
+    orderNumber: string;
+    title: string;
+    status: string;
+    itemPriceCNY?: number;
+    deliveryPriceRUB?: number;
+    totalPriceRUB?: number;
+    quantity: number;
+    createdAt: string;
+    storeName?: string;
+  }[];
 }
 
 export interface ClientProfile {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  city?: string;
-  role: string;
-  createdAt: string;
-  _count: { orders: number };
-}
-
-export interface ProfileData {
-  name: string;
-  phone?: string;
-  city?: string;
-}
-
-function getAuthHeaders(): Record<string, string> {
-  const token = useAppStore.getState().token;
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  client: {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    city?: string;
+    role: string;
+    createdAt: string;
+    updatedAt: string;
   };
+  stats: {
+    totalOrders: number;
+    newOrders: number;
+    activeOrders: number;
+    deliveredOrders: number;
+    cancelledOrders: number;
+    totalSpent: number;
+    totalDeliverySpent: number;
+    totalItems: number;
+    totalMessages: number;
+    avgOrderValue: number;
+    firstOrder: string | null;
+    lastOrder: string | null;
+  };
+  orders: {
+    id: string;
+    orderNumber: string;
+    title: string;
+    status: string;
+    totalPriceRUB?: number;
+    itemPriceCNY?: number;
+    deliveryPriceRUB?: number;
+    quantity: number;
+    deliveryCity?: string;
+    createdAt: string;
+    storeName?: string;
+    storeUrl?: string;
+  }[];
 }
 
-export const authAPI = {
-  login: async (email: string, password: string) => {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Ошибка входа");
-    return data;
-  },
-  register: async (name: string, email: string, password: string) => {
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Ошибка регистрации");
-    return data;
-  },
-  getMe: async () => {
-    const res = await fetch("/api/auth/me", { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error("Не авторизован");
-    return res.json();
-  },
-};
-
-export const ordersAPI = {
-  getAll: async (page = 1, limit = 20, status?: string) => {
-    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (status) params.set("status", status);
-    const res = await fetch(`/api/orders?${params}`, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error("Ошибка загрузки заявок");
-    return res.json() as Promise<OrdersResponse>;
-  },
-  getById: async (id: string) => {
-    const res = await fetch(`/api/orders/${id}`, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error("Заявка не найдена");
-    return res.json() as Promise<Order>;
-  },
-  create: async (data: {
-    clientNote?: string;
-    items: { name: string; quantity: number; imageUrl?: string; note?: string }[];
-  }) => {
-    const res = await fetch("/api/orders", {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || "Ошибка создания заявки");
-    }
-    return res.json() as Promise<Order>;
-  },
-  update: async (id: string, data: Record<string, unknown>) => {
-    const res = await fetch(`/api/orders/${id}`, {
-      method: "PATCH",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error("Ошибка обновления заявки");
-    return res.json() as Promise<Order>;
-  },
-  delete: async (id: string) => {
-    const res = await fetch(`/api/orders/${id}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    });
-    if (!res.ok) throw new Error("Ошибка удаления заявки");
-    return res.json();
-  },
-  getMessages: async (orderId: string) => {
-    const res = await fetch(`/api/orders/${orderId}/messages`, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error("Ошибка загрузки сообщений");
-    return res.json() as Promise<Message[]>;
-  },
-  sendMessage: async (orderId: string, content: string) => {
-    const res = await fetch(`/api/orders/${orderId}/messages`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ content }),
-    });
-    if (!res.ok) throw new Error("Ошибка отправки сообщения");
-    return res.json() as Promise<Message>;
-  },
-};
+// Profile
+export interface ProfileData {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  phone?: string;
+  city?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export const profileAPI = {
-  get: async () => {
-    const res = await fetch("/api/profile", { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error("Ошибка загрузки профиля");
-    return res.json() as Promise<ProfileData & { id: string; email: string; role: string }>;
+  getProfile: async (): Promise<ProfileData> => {
+    return fetchAPI<ProfileData>("/profile");
   },
-  update: async (data: ProfileData) => {
-    const res = await fetch("/api/profile", {
+
+  updateProfile: async (data: {
+    name: string;
+    phone?: string | null;
+    city?: string | null;
+  }): Promise<ProfileData> => {
+    return fetchAPI<ProfileData>("/profile", {
       method: "PATCH",
-      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error("Ошибка обновления профиля");
-    return res.json();
   },
 };
 
+// Upload
 export const uploadAPI = {
-  upload: async (file: File) => {
-    const token = useAppStore.getState().token;
+  uploadImage: async (file: File): Promise<{ url: string }> => {
+    const store = useAppStore.getState();
+    const token = store.token;
+
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch("/api/image-proxy", {
+
+    const res = await fetch(`${API_BASE}/upload`, {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     });
-    if (!res.ok) throw new Error("Ошибка загрузки файла");
-    return res.json() as Promise<{ url: string }>;
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        if (store.user) {
+          store.logout();
+        }
+      }
+      const error = await res.json().catch(() => ({ error: "Ошибка запроса" }));
+      throw new Error(error.error || `Ошибка ${res.status}`);
+    }
+
+    return res.json();
   },
 };
 
+// Admin
 export const adminAPI = {
-  getStats: async () => {
-    const res = await fetch("/api/admin/stats", { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error("Ошибка загрузки статистики");
-    return res.json() as Promise<AdminStats>;
+  getStats: async (): Promise<AdminStats> => {
+    return fetchAPI<AdminStats>("/admin/stats");
   },
-  getClientStats: async (clientId: string) => {
-    const res = await fetch(`/api/admin/client-stats?clientId=${clientId}`, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error("Ошибка загрузки статистики клиента");
-    return res.json() as Promise<ClientStats>;
+
+  getClientStats: async (clientId: string): Promise<ClientStats> => {
+    return fetchAPI<ClientStats>(`/admin/client-stats?clientId=${clientId}`);
   },
-  getClientProfile: async (clientId: string) => {
-    const res = await fetch(`/api/admin/client-profile/${clientId}`, { headers: getAuthHeaders() });
-    if (!res.ok) throw new Error("Ошибка загрузки профиля клиента");
-    return res.json() as Promise<ClientProfile>;
+
+  getClientProfile: async (clientId: string): Promise<ClientProfile> => {
+    return fetchAPI<ClientProfile>(`/admin/client-profile/${clientId}`);
   },
 };
