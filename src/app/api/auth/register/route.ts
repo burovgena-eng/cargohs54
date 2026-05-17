@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { db } from "@/lib/db";
+import { db, ensureDb } from "@/lib/db";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate limiting
+    await ensureDb();
+
     const ip = getClientIP(req);
     const { allowed, retryAfter } = checkRateLimit(ip);
     if (!allowed) {
@@ -63,6 +64,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    console.log(`[register] New user: ${normalizedEmail} (${name})`);
+
     return NextResponse.json(
       {
         id: user.id,
@@ -73,7 +76,7 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Register error:", error);
+    console.error("[register] Error:", error);
     return NextResponse.json(
       { error: "Ошибка при регистрации" },
       { status: 500 }
