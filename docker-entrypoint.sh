@@ -5,6 +5,10 @@ echo "=========================================="
 echo "[$(date)] CargoHS54 — Starting..."
 echo "=========================================="
 
+# Default DATABASE_URL if not set
+export DATABASE_URL="${DATABASE_URL:-file:./db/custom.db}"
+
+# Database init
 DB_FILE="${DATABASE_URL#file:}"
 DB_DIR=$(dirname "$DB_FILE")
 
@@ -13,21 +17,20 @@ if [ ! -d "$DB_DIR" ]; then
   mkdir -p "$DB_DIR"
 fi
 
-PRISMA="./node_modules/prisma/build/index.js"
-
 if [ ! -f "$DB_FILE" ]; then
   echo "[entrypoint] No database found. Running prisma db push..."
-  bun $PRISMA db push --skip-generate 2>&1 || bun $PRISMA db push 2>&1
+  bunx prisma db push --skip-generate
   echo "[entrypoint] Database created successfully."
 else
   echo "[entrypoint] Database exists, syncing schema..."
-  bun $PRISMA db push --skip-generate --accept-data-loss 2>/dev/null || \
-  bun $PRISMA db push --skip-generate 2>&1
+  bunx prisma db push --skip-generate --accept-data-loss 2>/dev/null || \
+  bunx prisma db push --skip-generate
   echo "[entrypoint] Schema synced."
 fi
 
+# Seed admin user if DB is fresh
 ROW_COUNT=$(bun -e "
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('.prisma/client');
 const db = new PrismaClient();
 db.user.count().then(c => { console.log(c); db.\$disconnect(); }).catch(() => { console.log(0); });
 " 2>/dev/null || echo "0")
@@ -35,7 +38,7 @@ db.user.count().then(c => { console.log(c); db.\$disconnect(); }).catch(() => { 
 if [ "$ROW_COUNT" = "0" ]; then
   echo "[entrypoint] Fresh database — seeding admin user..."
   bun -e "
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('.prisma/client');
 const bcrypt = require('bcryptjs');
 const db = new PrismaClient();
 async function seed() {
@@ -56,8 +59,9 @@ else
   echo "[entrypoint] Database has $ROW_COUNT user(s), skipping seed."
 fi
 
+# Start Next.js server
 echo "=========================================="
 echo "[$(date)] Starting Next.js on port ${PORT:-10000}"
 echo "=========================================="
 
-exec bun server.js
+exec bun run .next/standalone/server.js
