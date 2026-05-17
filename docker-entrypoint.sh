@@ -17,7 +17,7 @@ if [ ! -d "$DB_DIR" ]; then
   mkdir -p "$DB_DIR"
 fi
 
-# Verify database file exists (created during Docker build)
+# Verify database file exists (bundled during Docker build)
 if [ -f "$DB_FILE" ]; then
   echo "[entrypoint] Database found: $DB_FILE"
 else
