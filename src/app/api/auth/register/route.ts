@@ -5,8 +5,10 @@ import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    // Ensure database is initialized
     await ensureDb();
 
+    // Rate limiting
     const ip = getClientIP(req);
     const { allowed, retryAfter } = checkRateLimit(ip);
     if (!allowed) {
@@ -16,26 +18,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let body: Record<string, unknown>;
-    try {
-      body = await req.json();
-    } catch {
+    const body = await req.json();
+
+    // Type-safe field extraction — prevent crashes on missing fields
+    const emailRaw = typeof body.email === "string" ? body.email.trim() : "";
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+    const phone = typeof body.phone === "string" ? body.phone.trim() : null;
+    const city = typeof body.city === "string" ? body.city.trim() : null;
+
+    console.log(`[register] Attempt: ${emailRaw || "(empty)"} name=${name || "(empty)"}`);
+
+    const normalizedEmail = emailRaw.toLowerCase();
+
+    if (!normalizedEmail) {
       return NextResponse.json(
-        { error: "Неверный формат запроса" },
+        { error: "Email обязателен" },
         { status: 400 }
       );
     }
 
-    const email = typeof body.email === "string" ? body.email.trim() : "";
-    const name = typeof body.name === "string" ? body.name.trim() : "";
-    const password = typeof body.password === "string" ? body.password : "";
-    const phone = typeof body.phone === "string" ? body.phone.trim() : undefined;
-    const city = typeof body.city === "string" ? body.city.trim() : undefined;
-    const normalizedEmail = email.toLowerCase();
-
-    if (!normalizedEmail || !name || !password) {
+    if (!name) {
       return NextResponse.json(
-        { error: "Email, имя и пароль обязательны" },
+        { error: "Имя обязательно" },
+        { status: 400 }
+      );
+    }
+
+    if (!password) {
+      return NextResponse.json(
+        { error: "Пароль обязателен" },
         { status: 400 }
       );
     }
@@ -59,6 +71,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingUser) {
+      console.log(`[register] Already exists: ${normalizedEmail}`);
       return NextResponse.json(
         { error: "Пользователь с таким email уже существует" },
         { status: 409 }
@@ -72,13 +85,13 @@ export async function POST(req: NextRequest) {
         email: normalizedEmail,
         name,
         passwordHash,
-        phone: phone || null,
-        city: city || null,
+        phone,
+        city,
         role: "CLIENT",
       },
     });
 
-    console.log(`[register] New user: ${normalizedEmail} (${name})`);
+    console.log(`[register] Success: ${normalizedEmail} (${name})`);
 
     return NextResponse.json(
       {
