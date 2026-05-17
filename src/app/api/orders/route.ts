@@ -58,9 +58,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  console.log("[orders] POST received");
   try {
     await ensureDb();
     const user = await getCurrentUser(req);
+    console.log("[orders] User:", user ? user.email : "null");
+
     if (!user) {
       return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     }
@@ -68,6 +71,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { items, deliveryCity } = body;
 
+    console.log("[orders] Items:", Array.isArray(items) ? items.length : "not array");
+
+    // Validate items array
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { error: "Необходимо добавить хотя бы один товар" },
@@ -75,6 +81,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate items count
     if (items.length > 50) {
       return NextResponse.json(
         { error: "Максимум 50 товаров в одной заявке" },
@@ -82,6 +89,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate individual item fields
     for (let i = 0; i < items.length; i++) {
       const item = items[i] as Record<string, unknown>;
       if (!item.title || typeof item.title !== "string" || !item.title.trim()) {
@@ -117,6 +125,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Validate deliveryCity length
     if (deliveryCity && typeof deliveryCity === "string" && deliveryCity.length > 200) {
       return NextResponse.json(
         { error: "Город доставки слишком длинный" },
@@ -124,11 +133,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Generate unique orderNumber: CG-YYMMDD-NNNN with retry on collision
     const now = new Date();
     const yy = String(now.getFullYear()).slice(-2);
     const mm = String(now.getMonth() + 1).padStart(2, "0");
     const dd = String(now.getDate()).padStart(2, "0");
     const dateStr = `${yy}${mm}${dd}`;
+
     const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
 
     let orderNumber: string;
@@ -143,6 +154,7 @@ export async function POST(req: NextRequest) {
       orderNumber = `CG-${dateStr}-${seq}`;
 
       try {
+        // Auto-generate title
         let orderTitle: string;
         if (items.length === 1) {
           orderTitle = items[0].title || "Товар";
@@ -199,6 +211,8 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    console.log(`[orders] Created: ${order.orderNumber} for ${user.email}`);
 
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
