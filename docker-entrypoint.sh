@@ -1,24 +1,36 @@
 #!/bin/sh
+set -e
 
-echo "=== CargoHS54 Starting ==="
+echo "=========================================="
+echo "[$(date)] CargoHS54 — Starting..."
+echo "=========================================="
 
-DATABASE_URL="${DATABASE_URL:-file:./db/custom.db}"
-export DATABASE_URL
+# Set DATABASE_URL to default if not provided
+export DATABASE_URL="${DATABASE_URL:-file:./db/custom.db}"
 
+# Extract file path from DATABASE_URL
 DB_FILE="${DATABASE_URL#file:}"
 DB_DIR=$(dirname "$DB_FILE")
 
-mkdir -p "$DB_DIR"
-
-if [ ! -f "$DB_FILE" ]; then
-  echo "Creating database..."
-  ./node_modules/.bin/prisma db push
-else
-  echo "Syncing schema..."
-  ./node_modules/.bin/prisma db push 2>/dev/null
+# Ensure database directory exists
+if [ ! -d "$DB_DIR" ]; then
+  echo "[entrypoint] Creating database directory: $DB_DIR"
+  mkdir -p "$DB_DIR"
 fi
 
-bun -e "const {PrismaClient}=require('.prisma/client');const bcrypt=require('bcryptjs');const db=new PrismaClient();(async()=>{const c=await db.user.count();if(c===0){const h=await bcrypt.hash('admin123',10);await db.user.create({data:{email:'admin@cargohs54.ru',name:'Admin',passwordHash:h,role:'ADMIN'}});const h2=await bcrypt.hash('client123',10);await db.user.create({data:{email:'test@test.ru',name:'Test',passwordHash:h2,role:'CLIENT'}});console.log('Seeded')}await db.disconnect()})().catch(()=>{})"
+# Verify database file exists (it should — created during Docker build)
+if [ ! -f "$DB_FILE" ]; then
+  echo "[entrypoint] WARNING: Database file not found at $DB_FILE"
+  echo "[entrypoint] Creating empty database file..."
+  touch "$DB_FILE"
+fi
 
-echo "Starting server on port ${PORT:-10000}..."
-exec node server.js
+echo "[entrypoint] Database: $DB_FILE"
+echo "[entrypoint] Port: ${PORT:-10000}"
+
+# Start Next.js production server
+echo "=========================================="
+echo "[$(date)] Starting Next.js..."
+echo "=========================================="
+
+exec bun server.js
