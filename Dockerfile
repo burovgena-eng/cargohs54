@@ -24,8 +24,7 @@ RUN mkdir -p db
 RUN bunx prisma db push
 
 # Seed admin user into the pre-built database
-RUN bun -e "const{PrismaClient}=require('@prisma/client');const bcrypt=require('bcryptjs');const db=new PrismaClient();(async()=>{const h=await bcrypt.hash('admin123',10);await db.user.create({data:{email:'admin@cargohs54.ru',name:'Администратор',passwordHash:h,role:'ADMIN'}});const h2=await bcrypt.hash('client123',10);await db.user.create({data:{email:'test@test.ru',name:'Тестовый клиент',passwordHash:h2,role:'CLIENT'}});console.log('Seeded: admin@cargohs54.ru / admin123');await db.disconnect()})()"
-
+RUN bun -e "const{PrismaClient}=require('@prisma/client');const bcrypt=require('bcryptjs');const db=new PrismaClient();(async()=>{const h=await bcrypt.hash('admin123',10);await db.user.create({data:{email:'admin@cargohs54.ru',name:'Администратор',passwordHash:h,role:'ADMIN'}});const h2=await bcrypt.hash('client123',10);await db.user.create({data:{email:'test@test.ru',name:'Тестовый клиент',passwordHash:h2,role:'CLIENT'}});console.log('Seeded');process.exit(0)})()"
 # Build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
