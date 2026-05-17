@@ -1,31 +1,56 @@
 import { NextRequest } from "next/server";
-import { jwt } from "next-auth/jwt";
+import { decode } from "next-auth/jwt";
+import { db } from "@/lib/db";
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || "cargohs54-jwt-secret-fallback-2024";
+const COOKIE_NAME = "next-auth.session-token";
 
 export async function getCurrentUser(req: NextRequest) {
+
+  // 1. Try Authorization header (Bearer token)
+  const authHeader = req.headers.get("authorization");
+  let tokenStr: string | undefined;
+
+  if (authHeader?.startsWith("Bearer ")) {
+    tokenStr = authHeader.slice(7);
+  } else {
+    // 2. Fallback: try cookie
+    tokenStr = req.cookies.get(COOKIE_NAME)?.value;
+  }
+
+  if (!tokenStr) {
+    return null;
+  }
+
+  // Decode JWT
+  let payload;
   try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader?.startsWith("Bearer ")) return null;
-    const token = authHeader.slice(7);
-
-    if (!token) return null;
-
-    const decoded = await jwt({
-      token,
+    payload = await decode({
+      token: tokenStr,
       secret: JWT_SECRET,
     });
-
-    if (!decoded?.sub) return null;
-
-    return {
-      id: decoded.sub as string,
-      email: decoded.email as string,
-      name: decoded.name as string,
-      role: decoded.role as string,
-      phone: decoded.phone as string | undefined,
-    };
   } catch {
     return null;
   }
+
+  if (!payload?.sub) {
+    return null;
+  }
+
+  // Look up user in DB
+  const user = await db.user.findUnique({
+    where: { id: payload.sub as string },
+  });
+
+  if (!user) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    city: user.city,
+  };
 }
