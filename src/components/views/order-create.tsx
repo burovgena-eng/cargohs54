@@ -43,7 +43,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAppStore } from "@/stores/app-store";
-import { ordersAPI, uploadAPI } from "@/lib/api";
+import { uploadAPI } from "@/lib/api";
 import { proxyImageUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -97,7 +97,6 @@ function getDisplayImageUrl(item: ItemState) {
   return null;
 }
 
-/* ─── Tip tooltip helper ─── */
 function TipButton({ tip }: { tip: string }) {
   return (
     <Tooltip>
@@ -113,7 +112,6 @@ function TipButton({ tip }: { tip: string }) {
   );
 }
 
-/* ─── Item Card ─── */
 function ItemCard({
   index,
   item,
@@ -139,7 +137,6 @@ function ItemCard({
 
   return (
     <div className="relative rounded-xl border border-border/60 bg-card p-4 sm:p-5 space-y-4">
-      {/* Header: number + remove */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-100 text-orange-600 text-xs font-bold dark:bg-orange-900/30 dark:text-orange-400">
@@ -162,7 +159,6 @@ function ItemCard({
         )}
       </div>
 
-      {/* Title */}
       <div className="space-y-2">
         <div className="flex items-center gap-1.5">
           <Label>
@@ -182,7 +178,6 @@ function ItemCard({
         </div>
       </div>
 
-      {/* Description */}
       <div className="space-y-2">
         <div className="flex items-center gap-1.5">
           <Label>Описание</Label>
@@ -196,7 +191,6 @@ function ItemCard({
         />
       </div>
 
-      {/* Store URL */}
       <div className="space-y-2">
         <div className="flex items-center gap-1.5">
           <Label>Ссылка на товар</Label>
@@ -220,7 +214,6 @@ function ItemCard({
         )}
       </div>
 
-      {/* Store Name and Quantity */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <div className="flex items-center gap-1.5">
@@ -255,14 +248,12 @@ function ItemCard({
         </div>
       </div>
 
-      {/* Image Section */}
       <div className="space-y-3">
         <div className="flex items-center gap-1.5">
           <Label>Фото товара</Label>
           <TipButton tip={TIPS.image} />
         </div>
 
-        {/* Upload Area */}
         {!activeImageUrl && (
           <div
             className={`relative rounded-xl border-2 border-dashed transition-colors cursor-pointer ${
@@ -300,7 +291,6 @@ function ItemCard({
           </div>
         )}
 
-        {/* Preview */}
         {activeImageUrl && !item.imageError && (
           <div className="space-y-2">
             <div className="relative rounded-xl border overflow-hidden group">
@@ -347,7 +337,6 @@ function ItemCard({
           </div>
         )}
 
-        {/* Image load error */}
         {isFromUrl && item.imageError && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-950/30 p-4">
             <div className="flex items-start gap-3">
@@ -397,7 +386,6 @@ function ItemCard({
           </div>
         )}
 
-        {/* URL input */}
         <div className="relative">
           <ImageIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -430,7 +418,6 @@ function ItemCard({
   );
 }
 
-/* ─── Main View ─── */
 export function OrderCreateView() {
   const { setView, selectOrder, user } = useAppStore();
   const [items, setItems] = useState<ItemState[]>([createEmptyItem()]);
@@ -438,13 +425,10 @@ export function OrderCreateView() {
   const [sameAsHome, setSameAsHome] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
-
-  // We use a single hidden file input; activeUploadIdx tracks which item it belongs to
   const [activeUploadIdx, setActiveUploadIdx] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // File validation + upload to server
   const handleFileUpload = useCallback(async (file: File, idx: number) => {
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowed.includes(file.type)) {
@@ -457,8 +441,6 @@ export function OrderCreateView() {
     }
 
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, uploading: true } : it)));
-
-    // Create blob URL for local preview
     const blobUrl = URL.createObjectURL(file);
 
     try {
@@ -470,7 +452,6 @@ export function OrderCreateView() {
       );
       toast({ title: "Фото загружено", description: "Изображение прикреплено к заявке" });
     } catch (err) {
-      // Revoke blob URL on failure
       URL.revokeObjectURL(blobUrl);
       setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, uploading: false } : it)));
       toast({
@@ -481,7 +462,6 @@ export function OrderCreateView() {
     }
   }, [toast]);
 
-  // File input change handler
   const onFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && activeUploadIdx !== null) handleFileUpload(file, activeUploadIdx);
@@ -489,14 +469,11 @@ export function OrderCreateView() {
     setActiveUploadIdx(null);
   };
 
-  // Trigger file picker for a specific item
   const triggerUpload = (idx: number) => {
     setActiveUploadIdx(idx);
-    // Need a micro-delay so the state is set before the click
     setTimeout(() => fileInputRef.current?.click(), 0);
   };
 
-  // Handle drop on an item card (delegated via wrapper)
   const handleItemDrop = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
@@ -504,26 +481,22 @@ export function OrderCreateView() {
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, dragOver: false } : it)));
   };
 
-  // Update a single item
   const updateItem = (idx: number, patch: Partial<ItemState>) => {
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
   };
 
-  // Add new item
   const addItem = () => {
     setItems((prev) => [...prev, createEmptyItem()]);
   };
 
-  // Remove item
   const removeItem = (idx: number) => {
     setItems((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[order-create] handleSubmit called, items:", JSON.stringify(items.map(it => ({ title: it.title, qty: it.quantity }))));
+    console.log("[order-create] handleSubmit called");
 
-    // Validate: first item must have a title
     if (!items[0].title.trim()) {
       toast({ title: "Заполните название товара", description: "Название первого товара обязательно", variant: "destructive" });
       return;
@@ -532,6 +505,15 @@ export function OrderCreateView() {
     setLoading(true);
 
     try {
+      const store = useAppStore.getState();
+      const token = store.token;
+
+      if (!token) {
+        toast({ title: "Ошибка", description: "Вы не авторизованы. Войдите заново.", variant: "destructive" });
+        store.logout();
+        return;
+      }
+
       const mappedItems = items
         .filter((it) => it.title.trim())
         .map((it) => ({
@@ -550,16 +532,38 @@ export function OrderCreateView() {
 
       console.log("[order-create] Sending order:", JSON.stringify(mappedItems));
 
-      const order = await ordersAPI.createOrder({
-        items: mappedItems,
-        deliveryCity: deliveryCity.trim() || undefined,
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          items: mappedItems,
+          deliveryCity: deliveryCity.trim() || undefined,
+        }),
       });
+
+      console.log("[order-create] Response status:", res.status);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Ошибка сервера" }));
+        if (res.status === 401) {
+          toast({ title: "Сессия истекла", description: "Войдите заново", variant: "destructive" });
+          store.logout();
+          return;
+        }
+        throw new Error(err.error || `Ошибка ${res.status}`);
+      }
+
+      const order = await res.json();
 
       toast({ title: "Заявка создана!", description: "Мы рассмотрим вашу заявку в ближайшее время" });
       selectOrder(order.id);
       setView("order-detail");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Ошибка при создании заявки";
+      console.error("[order-create] Error:", message);
       toast({ title: "Ошибка", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
@@ -569,7 +573,6 @@ export function OrderCreateView() {
   return (
     <TooltipProvider delayDuration={200}>
       <div className="container mx-auto px-4 py-6 md:py-8 max-w-2xl">
-        {/* Hidden file input shared across all items */}
         <input
           ref={fileInputRef}
           type="file"
@@ -578,7 +581,6 @@ export function OrderCreateView() {
           className="hidden"
         />
 
-        {/* Back Button + Guide */}
         <div className="mb-6 flex items-center justify-between">
           <Button variant="ghost" onClick={() => setView("client-dashboard")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -611,7 +613,6 @@ export function OrderCreateView() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Items list */}
               <div className="space-y-4">
                 {items.map((item, idx) => (
                   <div
@@ -632,7 +633,6 @@ export function OrderCreateView() {
                 ))}
               </div>
 
-              {/* Add item button */}
               <Button
                 type="button"
                 variant="outline"
@@ -643,7 +643,6 @@ export function OrderCreateView() {
                 Добавить товар
               </Button>
 
-              {/* Delivery City */}
               <div className="space-y-2">
                 <div className="flex items-center gap-1.5">
                   <Label>Город доставки</Label>
@@ -682,7 +681,6 @@ export function OrderCreateView() {
                 )}
               </div>
 
-              {/* Actions */}
               <div className="flex flex-col gap-3 pt-4 sm:flex-row">
                 <Button
                   type="submit"
@@ -711,14 +709,12 @@ export function OrderCreateView() {
           </CardContent>
         </Card>
 
-        {/* Instruction Dialog */}
         <InstructionDialog open={showGuide} onOpenChange={setShowGuide} />
       </div>
     </TooltipProvider>
   );
 }
 
-/* ─── Instruction Dialog ─── */
 function InstructionDialog({
   open,
   onOpenChange,
@@ -742,7 +738,6 @@ function InstructionDialog({
         </DialogHeader>
 
         <div className="mt-4 space-y-6">
-          {/* Step 1 */}
           <div className="flex gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white text-sm font-bold">
               1
@@ -763,7 +758,6 @@ function InstructionDialog({
 
           <Separator />
 
-          {/* Step 2 */}
           <div className="flex gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white text-sm font-bold">
               2
@@ -785,7 +779,6 @@ function InstructionDialog({
 
           <Separator />
 
-          {/* Step 3 */}
           <div className="flex gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white text-sm font-bold">
               3
@@ -840,7 +833,6 @@ function InstructionDialog({
 
           <Separator />
 
-          {/* Step 4 */}
           <div className="flex gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white text-sm font-bold">
               4
@@ -859,7 +851,6 @@ function InstructionDialog({
 
           <Separator />
 
-          {/* Step 5 */}
           <div className="flex gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white text-sm font-bold">
               5
@@ -877,7 +868,6 @@ function InstructionDialog({
             </div>
           </div>
 
-          {/* Tip box */}
           <div className="rounded-xl bg-orange-50 border border-orange-200 dark:bg-orange-950/30 dark:border-orange-800/50 p-4">
             <p className="text-sm font-medium text-orange-800 dark:text-orange-300 flex items-center gap-1.5 mb-1">
               <Lightbulb className="h-4 w-4" />
