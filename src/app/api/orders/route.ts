@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-helpers";
-import { db } from "@/lib/db";
+import { db, ensureDb } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   try {
+    await ensureDb();
     const user = await getCurrentUser(req);
     if (!user) return NextResponse.json({ error: "Не авторизован" }, { status: 401 });
     const { searchParams } = new URL(req.url);
@@ -55,9 +56,10 @@ export async function POST(req: NextRequest) {
       orderNumber = `CG-${dateStr}-${String(todayOrderCount+1).padStart(5,"0")}`;
       try {
         let orderTitle = items.length === 1 ? (items[0].title || "Товар") : `${items.length} товаров`;
-        const totalQuantity = items.reduce((s: number, it: Record<string, unknown>) => s + (Number(it.quantity) || 1), 0);
-        order = await db.order.create({
-          data: {
+       export async function POST(req: NextRequest) {
+  try {
+    await ensureDb();
+    const user = await getCurrentUser(req);
             userId: user.id, orderNumber, title: orderTitle,
             deliveryCity: deliveryCity || null, status: "NEW", quantity: totalQuantity,
             items: { create: items.map((item: Record<string, unknown>) => ({
