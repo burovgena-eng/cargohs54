@@ -36,6 +36,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 RUN bun run build
 
+# Copy database into standalone output so it ships with the server
+RUN mkdir -p .next/standalone/db && cp db/custom.db .next/standalone/db/custom.db
+
 # ── Stage 3: Production runtime ────────────────────────────
 FROM oven/bun:1-alpine AS runner
 
@@ -50,21 +53,18 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 appuser
 
-# Create db directory with write access
+# Create directories with write access
 RUN mkdir -p /app/db /app/public/uploads && \
     chown -R appuser:nodejs /app/db /app/public/uploads
 
-# Copy standalone output (includes server code + required node_modules)
+# Copy standalone output (includes server + db file)
 COPY --from=builder --chown=appuser:nodejs /app/.next/standalone ./
 
 # Copy static assets & public folder
 COPY --from=builder --chown=appuser:nodejs /app/.next/static    ./.next/static
 COPY --from=builder --chown=appuser:nodejs /app/public         ./public
 
-# Copy pre-built database file (created during build stage)
-COPY --from=builder --chown=appuser:nodejs /app/db/custom.db   ./db/custom.db
-
-# Copy Prisma schema + generated client with engine (NO CLI — prevents v7 download)
+# Copy Prisma schema + generated client with engine
 COPY --from=builder --chown=appuser:nodejs /app/prisma               ./prisma
 COPY --from=builder --chown=appuser:nodejs /app/node_modules/.prisma  ./node_modules/.prisma
 
