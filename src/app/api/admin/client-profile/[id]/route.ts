@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-helpers";
-import { db } from "@/lib/db";
+import { db, ensureDb } from "@/lib/db";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await ensureDb();
     const user = await getCurrentUser(req);
     if (!user || user.role !== "ADMIN") {
       return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
@@ -14,7 +15,6 @@ export async function GET(
 
     const { id } = await params;
 
-    // Get client info
     const client = await db.user.findUnique({
       where: { id },
       select: {
@@ -33,7 +33,6 @@ export async function GET(
       return NextResponse.json({ error: "Клиент не найден" }, { status: 404 });
     }
 
-    // Get ALL orders for this client
     const orders = await db.order.findMany({
       where: { userId: id },
       orderBy: { createdAt: "desc" },
@@ -53,7 +52,6 @@ export async function GET(
       },
     });
 
-    // Calculate stats
     const totalOrders = orders.length;
     const newOrders = orders.filter((o) => o.status === "NEW").length;
     const activeOrders = orders.filter((o) =>
