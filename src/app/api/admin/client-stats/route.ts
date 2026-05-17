@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-helpers";
-import { db } from "@/lib/db";
+import { db, ensureDb } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   try {
+    await ensureDb();
     const user = await getCurrentUser(req);
     if (!user || user.role !== "ADMIN") {
       return NextResponse.json({ error: "Доступ запрещён" }, { status: 403 });
@@ -14,7 +15,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "clientId is required" }, { status: 400 });
     }
 
-    // Get client info
     const client = await db.user.findUnique({
       where: { id: clientId },
       select: {
@@ -31,7 +31,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Клиент не найден" }, { status: 404 });
     }
 
-    // Get all orders for this client
     const orders = await db.order.findMany({
       where: { userId: clientId },
       orderBy: { createdAt: "desc" },
@@ -49,7 +48,6 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Calculate stats
     const totalOrders = orders.length;
     const newOrders = orders.filter((o) => o.status === "NEW").length;
     const activeOrders = orders.filter((o) =>
@@ -76,7 +74,6 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // First and last order dates
     const firstOrder = orders.length > 0
       ? orders[orders.length - 1].createdAt
       : null;
@@ -84,7 +81,6 @@ export async function GET(req: NextRequest) {
       ? orders[0].createdAt
       : null;
 
-    // Average order value
     const paidOrders = orders.filter(
       (o) => o.totalPriceRUB != null && o.totalPriceRUB > 0
     );
