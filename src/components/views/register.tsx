@@ -36,17 +36,41 @@ export function RegisterView() {
     setLoading(true);
 
     try {
-      // 1. Register user via API
-      await authAPI.register({
-        email,
-        name,
+      // Client-side validation
+      if (!email.trim()) {
+        throw new Error("Email обязателен");
+      }
+      if (!name.trim()) {
+        throw new Error("Имя обязательно");
+      }
+      if (password.length < 6) {
+        throw new Error("Пароль должен содержать минимум 6 символов");
+      }
+
+      const registerData = {
+        email: email.trim(),
+        name: name.trim(),
         password,
-        phone: phone || undefined,
-        city: city || undefined,
+        phone: phone.trim() || undefined,
+        city: city.trim() || undefined,
+      };
+
+      console.log("[register] Sending:", JSON.stringify(registerData));
+
+      // Direct fetch — bypass authAPI to avoid any issues
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(registerData),
       });
 
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Ошибка сервера" }));
+        throw new Error(err.error || "Ошибка регистрации");
+      }
+
       // 2. Log in via custom login API to get token
-      const loginData = await authAPI.login(email, password);
+      const loginData = await authAPI.login(email.trim(), password);
 
       // 3. Store user + token
       setUser({
