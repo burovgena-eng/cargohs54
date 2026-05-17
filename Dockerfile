@@ -19,20 +19,21 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client
 RUN bunx prisma generate
 
-# Create database, seed, build — all in ONE step to avoid cache issues
 ENV BUN_JAVA_SCRIPT_HEAP_LIMIT=384
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV DATABASE_URL="file:./db/custom.db"
+
+# Create DB + seed + backup to /tmp + build + restore DB into standalone
 RUN mkdir -p db && \
     bunx prisma db push && \
     bun -e "const{PrismaClient}=require('@prisma/client');const bcrypt=require('bcryptjs');const db=new PrismaClient();(async()=>{const h=await bcrypt.hash('admin123',10);await db.user.create({data:{email:'admin@cargohs54.ru',name:'Admin',passwordHash:h,role:'ADMIN'}});const h2=await bcrypt.hash('client123',10);await db.user.create({data:{email:'test@test.ru',name:'Test',passwordHash:h2,role:'CLIENT'}});console.log('Seeded');process.exit(0)})()" && \
+    cp db/custom.db /tmp/custom.db && \
     bun run build && \
     mkdir -p .next/standalone/db && \
-    cp db/custom.db .next/standalone/db/custom.db
+    cp /tmp/custom.db .next/standalone/db/custom.db
 
 # ── Stage 3: Production runtime ────────────────────────────
 FROM oven/bun:1-alpine AS runner
@@ -44,31 +45,23 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=10000
 ENV HOSTNAME="0.0.0.0"
 
-# Non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 appuser
 
-# Create directories with write access
 RUN mkdir -p /app/db /app/public/uploads && \
     chown -R appuser:nodejs /app/db /app/public/uploads
 
-# Copy standalone output (server + db + static)
 COPY --from=builder --chown=appuser:nodejs /app/.next/standalone ./
-
-# Copy static assets & public folder
 COPY --from=builder --chown=appuser:nodejs /app/.next/static    ./.next/static
 COPY --from=builder --chown=appuser:nodejs /app/public         ./public
 
-# Copy Prisma schema + generated client with engine
 COPY --from=builder --chown=appuser:nodejs /app/prisma               ./prisma
 COPY --from=builder --chown=appuser:nodejs /app/node_modules/.prisma  ./node_modules/.prisma
 
-# Copy entrypoint script
 COPY --chown=appuser:nodejs docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
 USER appuser
-
 EXPOSE 10000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
