@@ -19,21 +19,23 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Generate Prisma client (v6.11.1 from package.json)
 RUN bunx prisma generate
 
+# IMPORTANT: ABSOLUTE path /app/db/custom.db
+# Prisma resolves file:./db/custom.db relative to schema dir (prisma/),
+# not working directory. Absolute path avoids this.
+ENV DATABASE_URL="file:/app/db/custom.db"
 ENV BUN_JAVA_SCRIPT_HEAP_LIMIT=384
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-ENV DATABASE_URL="file:./db/custom.db"
 
-# Create DB + seed + backup to /tmp + build + restore DB into standalone
 RUN mkdir -p db && \
     bunx prisma db push && \
     bun -e "const{PrismaClient}=require('@prisma/client');const bcrypt=require('bcryptjs');const db=new PrismaClient();(async()=>{const h=await bcrypt.hash('admin123',10);await db.user.create({data:{email:'admin@cargohs54.ru',name:'Admin',passwordHash:h,role:'ADMIN'}});const h2=await bcrypt.hash('client123',10);await db.user.create({data:{email:'test@test.ru',name:'Test',passwordHash:h2,role:'CLIENT'}});console.log('Seeded');process.exit(0)})()" && \
-    cp db/custom.db /tmp/custom.db && \
     bun run build && \
     mkdir -p .next/standalone/db && \
-    cp /tmp/custom.db .next/standalone/db/custom.db
+    cp db/custom.db .next/standalone/db/custom.db
 
 # ── Stage 3: Production runtime ────────────────────────────
 FROM oven/bun:1-alpine AS runner
