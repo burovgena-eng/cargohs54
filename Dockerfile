@@ -1,6 +1,5 @@
 # ============================================================
 # CargoHS54 — Production Dockerfile for Render
-# Multi-stage: deps → build → runtime (bun)
 # ============================================================
 
 # ── Stage 1: Dependencies ──────────────────────────────────
@@ -20,24 +19,20 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client (v6.11.1 from package.json)
+# Generate Prisma client
 RUN bunx prisma generate
 
-# Create database and tables during build (Prisma CLI v6 is guaranteed here)
-ENV DATABASE_URL="file:./db/custom.db"
-RUN mkdir -p db && bunx prisma db push
-
-# Seed admin + test client into the pre-built database
-RUN bun -e "const{PrismaClient}=require('@prisma/client');const bcrypt=require('bcryptjs');const db=new PrismaClient();(async()=>{const h=await bcrypt.hash('admin123',10);await db.user.create({data:{email:'admin@cargohs54.ru',name:'Admin',passwordHash:h,role:'ADMIN'}});const h2=await bcrypt.hash('client123',10);await db.user.create({data:{email:'test@test.ru',name:'Test',passwordHash:h2,role:'CLIENT'}});console.log('Seeded');process.exit(0)})()"
-
-# Build Next.js with memory limit to prevent OOM on Render
+# Create database, seed, build — all in ONE step to avoid cache issues
 ENV BUN_JAVA_SCRIPT_HEAP_LIMIT=384
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-RUN bun run build
-
-# Copy database into standalone output so it ships with the server
-RUN mkdir -p .next/standalone/db && cp db/custom.db .next/standalone/db/custom.db
+ENV DATABASE_URL="file:./db/custom.db"
+RUN mkdir -p db && \
+    bunx prisma db push && \
+    bun -e "const{PrismaClient}=require('@prisma/client');const bcrypt=require('bcryptjs');const db=new PrismaClient();(async()=>{const h=await bcrypt.hash('admin123',10);await db.user.create({data:{email:'admin@cargohs54.ru',name:'Admin',passwordHash:h,role:'ADMIN'}});const h2=await bcrypt.hash('client123',10);await db.user.create({data:{email:'test@test.ru',name:'Test',passwordHash:h2,role:'CLIENT'}});console.log('Seeded');process.exit(0)})()" && \
+    bun run build && \
+    mkdir -p .next/standalone/db && \
+    cp db/custom.db .next/standalone/db/custom.db
 
 # ── Stage 3: Production runtime ────────────────────────────
 FROM oven/bun:1-alpine AS runner
@@ -49,7 +44,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=10000
 ENV HOSTNAME="0.0.0.0"
 
-# Non-root user for security
+# Non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 appuser
 
@@ -57,7 +52,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 RUN mkdir -p /app/db /app/public/uploads && \
     chown -R appuser:nodejs /app/db /app/public/uploads
 
-# Copy standalone output (includes server + db file)
+# Copy standalone output (server + db + static)
 COPY --from=builder --chown=appuser:nodejs /app/.next/standalone ./
 
 # Copy static assets & public folder
