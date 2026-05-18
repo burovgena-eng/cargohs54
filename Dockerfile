@@ -1,5 +1,7 @@
 # ============================================================
 # CargoHS54 — Production Dockerfile for Render
+# Multi-stage: deps → build → runtime (bun)
+# Database: PostgreSQL (external — Supabase)
 # ============================================================
 
 # ── Stage 1: Dependencies ──────────────────────────────────
@@ -19,23 +21,16 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client (v6.11.1 from package.json)
+# Generate Prisma client (PostgreSQL)
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 RUN bunx prisma generate
 
-# IMPORTANT: ABSOLUTE path /app/db/custom.db
-# Prisma resolves file:./db/custom.db relative to schema dir (prisma/),
-# not working directory. Absolute path avoids this.
-ENV DATABASE_URL="file:/app/db/custom.db"
+# Build Next.js
 ENV BUN_JAVA_SCRIPT_HEAP_LIMIT=384
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-RUN mkdir -p db && \
-    bunx prisma db push && \
-    bun -e "const{PrismaClient}=require('@prisma/client');const bcrypt=require('bcryptjs');const db=new PrismaClient();(async()=>{const h=await bcrypt.hash('admin123',10);await db.user.create({data:{email:'admin@cargohs54.ru',name:'Admin',passwordHash:h,role:'ADMIN'}});const h2=await bcrypt.hash('client123',10);await db.user.create({data:{email:'test@test.ru',name:'Test',passwordHash:h2,role:'CLIENT'}});console.log('Seeded');process.exit(0)})()" && \
-    bun run build && \
-    mkdir -p .next/standalone/db && \
-    cp db/custom.db .next/standalone/db/custom.db
+RUN bun run build
 
 # ── Stage 3: Production runtime ────────────────────────────
 FROM oven/bun:1-alpine AS runner
@@ -47,23 +42,31 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=10000
 ENV HOSTNAME="0.0.0.0"
 
+# Non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 appuser
 
-RUN mkdir -p /app/db /app/public/uploads && \
-    chown -R appuser:nodejs /app/db /app/public/uploads
+# Create uploads directory with write access
+RUN mkdir -p /app/public/uploads && \
+    chown -R appuser:nodejs /app/public/uploads
 
+# Copy standalone output
 COPY --from=builder --chown=appuser:nodejs /app/.next/standalone ./
+
+# Copy static assets & public folder
 COPY --from=builder --chown=appuser:nodejs /app/.next/static    ./.next/static
 COPY --from=builder --chown=appuser:nodejs /app/public         ./public
 
+# Copy Prisma schema + generated client (PostgreSQL engine included)
 COPY --from=builder --chown=appuser:nodejs /app/prisma               ./prisma
 COPY --from=builder --chown=appuser:nodejs /app/node_modules/.prisma  ./node_modules/.prisma
 
+# Copy entrypoint script
 COPY --chown=appuser:nodejs docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
 USER appuser
+
 EXPOSE 10000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
