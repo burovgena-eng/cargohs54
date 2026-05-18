@@ -5,22 +5,13 @@ echo "=========================================="
 echo "[$(date)] CargoHS54 — Starting..."
 echo "=========================================="
 
-export DATABASE_URL="${DATABASE_URL:-file:/app/db/custom.db}"
-
-DB_FILE="/app/db/custom.db"
-DB_DIR=$(dirname "$DB_FILE")
-
-mkdir -p "$DB_DIR"
-
-if [ -f "$DB_FILE" ]; then
-  echo "[entrypoint] Database found: $DB_FILE"
+# DATABASE_URL must be set in Render env vars (PostgreSQL connection string)
+if [ -z "$DATABASE_URL" ]; then
+  echo "[entrypoint] WARNING: DATABASE_URL not set! Database operations will fail."
 else
-  echo "[entrypoint] Database not found, will create on first request"
-  touch "$DB_FILE"
-  chmod 644 "$DB_FILE"
+  echo "[entrypoint] DATABASE_URL is set (${#DATABASE_URL} chars)"
 fi
 
-echo "[entrypoint] DATABASE_URL=$DATABASE_URL"
 echo "[entrypoint] Port: ${PORT:-10000}"
 
 echo "=========================================="
