@@ -30,78 +30,18 @@ export async function ensureDb(): Promise<void> {
         if (code === 'P2021') {
           console.log('[db] Tables missing (P2021), creating PostgreSQL schema...');
 
-          await db.$executeRawUnsafe(`
-            CREATE TABLE IF NOT EXISTS "User" (
-              "id" TEXT NOT NULL PRIMARY KEY,
-              "email" TEXT NOT NULL,
-              "name" TEXT NOT NULL,
-              "passwordHash" TEXT NOT NULL,
-              "phone" TEXT,
-              "city" TEXT,
-              "role" TEXT NOT NULL DEFAULT 'CLIENT',
-              "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-            CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");
-          `);
+          await db.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "User" ("id" TEXT NOT NULL PRIMARY KEY, "email" TEXT NOT NULL, "name" TEXT NOT NULL, "passwordHash" TEXT NOT NULL, "phone" TEXT, "city" TEXT, "role" TEXT NOT NULL DEFAULT 'CLIENT', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP)`);
+          await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email")`);
           console.log('[db] Table "User" created');
 
-          await db.$executeRawUnsafe(`
-            CREATE TABLE IF NOT EXISTS "Order" (
-              "id" TEXT NOT NULL PRIMARY KEY,
-              "orderNumber" TEXT NOT NULL,
-              "userId" TEXT NOT NULL,
-              "title" TEXT NOT NULL,
-              "description" TEXT,
-              "status" TEXT NOT NULL DEFAULT 'NEW',
-              "adminNote" TEXT,
-              "deliveryCity" TEXT,
-              "itemPriceCNY" DOUBLE PRECISION,
-              "deliveryPriceRUB" DOUBLE PRECISION,
-              "totalPriceRUB" DOUBLE PRECISION,
-              "imageUrl" TEXT,
-              "storeUrl" TEXT,
-              "storeName" TEXT,
-              "quantity" INTEGER NOT NULL DEFAULT 1,
-              "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
-            );
-            CREATE UNIQUE INDEX IF NOT EXISTS "Order_orderNumber_key" ON "Order"("orderNumber");
-          `);
+          await db.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "Order" ("id" TEXT NOT NULL PRIMARY KEY, "orderNumber" TEXT NOT NULL, "userId" TEXT NOT NULL, "title" TEXT NOT NULL, "description" TEXT, "status" TEXT NOT NULL DEFAULT 'NEW', "adminNote" TEXT, "deliveryCity" TEXT, "itemPriceCNY" DOUBLE PRECISION, "deliveryPriceRUB" DOUBLE PRECISION, "totalPriceRUB" DOUBLE PRECISION, "imageUrl" TEXT, "storeUrl" TEXT, "storeName" TEXT, "quantity" INTEGER NOT NULL DEFAULT 1, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE)`);
+          await db.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Order_orderNumber_key" ON "Order"("orderNumber")`);
           console.log('[db] Table "Order" created');
 
-          await db.$executeRawUnsafe(`
-            CREATE TABLE IF NOT EXISTS "OrderItem" (
-              "id" TEXT NOT NULL PRIMARY KEY,
-              "orderId" TEXT NOT NULL,
-              "title" TEXT NOT NULL,
-              "description" TEXT,
-              "storeUrl" TEXT,
-              "storeName" TEXT,
-              "quantity" INTEGER NOT NULL DEFAULT 1,
-              "imageUrl" TEXT,
-              "itemPriceCNY" DOUBLE PRECISION,
-              "deliveryPriceRUB" DOUBLE PRECISION,
-              "totalPriceRUB" DOUBLE PRECISION,
-              "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order" ("id") ON DELETE CASCADE ON UPDATE CASCADE
-            );
-          `);
+          await db.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "OrderItem" ("id" TEXT NOT NULL PRIMARY KEY, "orderId" TEXT NOT NULL, "title" TEXT NOT NULL, "description" TEXT, "storeUrl" TEXT, "storeName" TEXT, "quantity" INTEGER NOT NULL DEFAULT 1, "imageUrl" TEXT, "itemPriceCNY" DOUBLE PRECISION, "deliveryPriceRUB" DOUBLE PRECISION, "totalPriceRUB" DOUBLE PRECISION, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order" ("id") ON DELETE CASCADE ON UPDATE CASCADE)`);
           console.log('[db] Table "OrderItem" created');
 
-          await db.$executeRawUnsafe(`
-            CREATE TABLE IF NOT EXISTS "Message" (
-              "id" TEXT NOT NULL PRIMARY KEY,
-              "orderId" TEXT NOT NULL,
-              "senderId" TEXT NOT NULL,
-              "text" TEXT NOT NULL,
-              "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              CONSTRAINT "Message_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-              CONSTRAINT "Message_senderId_fkey" FOREIGN KEY ("senderId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
-            );
-          `);
+          await db.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "Message" ("id" TEXT NOT NULL PRIMARY KEY, "orderId" TEXT NOT NULL, "senderId" TEXT NOT NULL, "text" TEXT NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "Message_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order" ("id") ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT "Message_senderId_fkey" FOREIGN KEY ("senderId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE)`);
           console.log('[db] Table "Message" created');
           console.log('[db] PostgreSQL schema created successfully');
           userCount = 0;
