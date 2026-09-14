@@ -38,6 +38,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!EMAIL_RE.test(normalizedEmail)) {
+      return NextResponse.json(
+        { error: "Некорректный формат email" },
+        { status: 400 }
+      );
+    }
+
     if (!name) {
       return NextResponse.json(
         { error: "Имя обязательно" },

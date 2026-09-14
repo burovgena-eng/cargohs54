@@ -3,8 +3,7 @@ import { db, ensureDb } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { encode } from "next-auth/jwt";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
-
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || "cargohs54-jwt-secret-fallback-2024";
+import { getJwtSecret } from "@/lib/jwt-secret";
 
 export async function POST(req: NextRequest) {
   try {
@@ -62,7 +61,7 @@ export async function POST(req: NextRequest) {
         name: user.name,
         role: user.role,
       },
-      secret: JWT_SECRET,
+      secret: getJwtSecret(),
     });
 
     return NextResponse.json({

@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { decode } from "next-auth/jwt";
 import { db } from "@/lib/db";
+import { getJwtSecret } from "@/lib/jwt-secret";
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || "cargohs54-jwt-secret-fallback-2024";
 const COOKIE_NAME = "next-auth.session-token";
 
 export async function getCurrentUser(req: NextRequest) {
@@ -27,7 +27,7 @@ export async function getCurrentUser(req: NextRequest) {
   try {
     payload = await decode({
       token: tokenStr,
-      secret: JWT_SECRET,
+      secret: getJwtSecret(),
     });
   } catch {
     return null;
