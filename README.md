@@ -2,9 +2,48 @@
 
 **Полнофункциональный сервис выкупа товаров и грузоперевозок из Китая в Россию.**
 
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)](https://nextjs.org)
+[![React](https://img.shields.io/badge/React-19-149eca?logo=react)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Prisma](https://img.shields.io/badge/Prisma-6-2d3748?logo=prisma&logoColor=white)](https://www.prisma.io)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169e1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-059669.svg)](LICENSE)
+[![CI](https://github.com/burovgena-eng/cargohs54/actions/workflows/ci.yml/badge.svg)](https://github.com/burovgena-eng/cargohs54/actions/workflows/ci.yml)
+
+**[Русский](README.md)** · [English](README_EN.md)
+
 Личный кабинет клиента и администратора, создание заявок на выкуп, отслеживание статусов доставки, внутренний чат по заявкам, консолидация заказов и загрузка изображений товаров — всё в одном приложении.
 
 > ⚠️ Демо-аккаунты и контактные данные в приложении вымышленные. Проект создан как портфолио и демонстрация полного цикла разработки.
+
+---
+
+## 📸 Интерфейс
+
+| Лендинг | Личный кабинет |
+|:---:|:---:|
+| ![Лендинг](docs/screenshots/01-landing-hero.png) | ![Кабинет клиента](docs/screenshots/05-client-dashboard.png) |
+
+| Заявка с чатом | Админ-панель |
+|:---:|:---:|
+| ![Заявка с чатом](docs/screenshots/06-order-detail.png) | ![Админ-панель](docs/screenshots/08-admin-dashboard.png) |
+
+<details>
+<summary><b>Больше скриншотов</b></summary>
+
+| Управление заявкой (админ) | Создание заявки |
+|:---:|:---:|
+| ![Управление заявкой](docs/screenshots/09-admin-order-detail.png) | ![Создание заявки](docs/screenshots/07-order-create.png) |
+
+| Вход | Преимущества |
+|:---:|:---:|
+| ![Вход](docs/screenshots/04-login.png) | ![Преимущества](docs/screenshots/02-landing-features.png) |
+
+| Процесс работы | Мобильная версия |
+|:---:|:---:|
+| ![Как это работает](docs/screenshots/03-landing-how.png) | ![Мобильная версия](docs/screenshots/10-mobile-landing.png) |
+
+</details>
 
 ---
 
@@ -112,7 +151,17 @@ bun run build       # production-сборка (standalone)
 bun run start       # production-сервер
 ```
 
-### 🐳 Docker
+## 🐳 Docker
+
+Самый быстрый способ запустить весь стек (приложение + PostgreSQL) — Docker Compose:
+
+```bash
+export NEXTAUTH_SECRET="$(openssl rand -base64 48)"
+docker compose up --build
+# → http://localhost:3000
+```
+
+Или только production-образ приложения:
 
 ```bash
 docker build -t cargohs54 .
@@ -181,3 +230,9 @@ docker run -p 3000:10000 \
 **[burovgena-eng](https://github.com/burovgena-eng)**
 
 Проект разработан как демонстрация навыков fullstack-разработки: от проектирования схемы БД и REST API до UI, аутентификации и контейнеризации.
+
+## ⚖️ Лицензия
+
+Проект распространяется под лицензией **MIT** — см. файл [LICENSE](LICENSE).
+
+Copyright © 2026 [burovgena-eng](https://github.com/burovgena-eng). Все права на торговые наименования третьих сторон (Taobao, 1688, Tmall, JD.com, Nike, Xiaomi и др.), упомянутые в демо-данных и интерфейсе, принадлежат их владельцам и использованы исключительно в демонстрационных целях.

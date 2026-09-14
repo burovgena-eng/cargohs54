@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build & verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: bunx prisma generate
+
+      - name: Build (standalone)
+        run: bun run build
+        env:
+          # A dummy URL is enough at build time: no DB connection is made,
+          # matching the production Dockerfile behaviour.
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Verify standalone output
+        run: test -f .next/standalone/server.js && echo "standalone server OK"

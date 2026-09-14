@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     title: "CargoHS54 — Грузоперевозки Китай → Россия",
     description:
       "Выкуп товаров и доставка грузов из Китая: личный кабинет, отслеживание статусов, консолидация заказов.",
-    images: [{ url: "/images/hero-bg-v8.png", width: 1200, height: 630, alt: "CargoHS54" }],
+    images: [{ url: "/images/og-banner.png", width: 1200, height: 630, alt: "CargoHS54 — Грузоперевозки Китай → Россия" }],
   },
   twitter: {
     card: "summary_large_image",

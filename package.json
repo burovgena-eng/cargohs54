@@ -2,6 +2,28 @@
   "name": "cargohs54",
   "version": "1.0.0",
   "private": true,
+  "description": "CargoHS54 — сервис выкупа товаров и грузоперевозок из Китая в Россию (Next.js 16, React 19, Prisma, PostgreSQL)",
+  "license": "MIT",
+  "author": {
+    "name": "burovgena-eng",
+    "url": "https://github.com/burovgena-eng"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/burovgena-eng/cargohs54.git"
+  },
+  "homepage": "https://github.com/burovgena-eng/cargohs54#readme",
+  "keywords": [
+    "nextjs",
+    "typescript",
+    "prisma",
+    "postgresql",
+    "tailwindcss",
+    "shadcn-ui",
+    "fullstack",
+    "cargo",
+    "logistics"
+  ],
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
     "build": "NEXT_PRIVATE_WORKER_THREADS=1 next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
