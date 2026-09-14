@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Prisma](https://img.shields.io/badge/Prisma-6-2d3748?logo=prisma&logoColor=white)](https://www.prisma.io)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169e1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-059669.svg)](LICENSE)
+[![License: All rights reserved](https://img.shields.io/badge/License-all_rights_reserved-red.svg)](#-copyright)
 [![CI](https://github.com/burovgena-eng/cargohs54/actions/workflows/ci.yml/badge.svg)](https://github.com/burovgena-eng/cargohs54/actions/workflows/ci.yml)
 
 [Русский](README.md) · **[English](README_EN.md)**
@@ -214,8 +214,10 @@ Seeded automatically into an empty database:
 
 Built as a portfolio project demonstrating fullstack skills: from database schema and REST API design to UI, authentication and containerization.
 
-## ⚖️ License
+## 📄 Copyright
 
-Released under the **MIT License** — see [LICENSE](LICENSE).
+**© 2026 burovgena-eng (Gennady Burov). All rights reserved.**
 
-Copyright © 2026 [burovgena-eng](https://github.com/burovgena-eng). All third-party trade names (Taobao, 1688, Tmall, JD.com, Nike, Xiaomi, etc.) mentioned in demo data and UI belong to their respective owners and are used for demonstration purposes only.
+This repository is published solely as a portfolio — for code review and skills demonstration. Copying, reuse, distribution and creation of derivative works (code, design, texts, images) without the author's written permission is prohibited.
+
+The `LICENSE` file is intentionally absent: without an open-source license, the default "all rights reserved" regime applies. All third-party trade names (Taobao, 1688, Tmall, JD.com, Nike, Xiaomi, etc.) mentioned in demo data and UI belong to their respective owners and are used for demonstration purposes only.

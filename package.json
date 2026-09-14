@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "description": "CargoHS54 — сервис выкупа товаров и грузоперевозок из Китая в Россию (Next.js 16, React 19, Prisma, PostgreSQL)",
-  "license": "MIT",
   "author": {
     "name": "burovgena-eng",
     "url": "https://github.com/burovgena-eng"

@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Prisma](https://img.shields.io/badge/Prisma-6-2d3748?logo=prisma&logoColor=white)](https://www.prisma.io)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169e1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-059669.svg)](LICENSE)
+[![License: All rights reserved](https://img.shields.io/badge/License-all_rights_reserved-red.svg)](README.md#-авторские-права)
 [![CI](https://github.com/burovgena-eng/cargohs54/actions/workflows/ci.yml/badge.svg)](https://github.com/burovgena-eng/cargohs54/actions/workflows/ci.yml)
 
 **[Русский](README.md)** · [English](README_EN.md)
@@ -231,8 +231,10 @@ docker run -p 3000:10000 \
 
 Проект разработан как демонстрация навыков fullstack-разработки: от проектирования схемы БД и REST API до UI, аутентификации и контейнеризации.
 
-## ⚖️ Лицензия
+## 📄 Авторские права
 
-Проект распространяется под лицензией **MIT** — см. файл [LICENSE](LICENSE).
+**© 2026 Буров Геннадий Владиславович. Все права защищены** (All rights reserved).
 
-Copyright © 2026 [burovgena-eng](https://github.com/burovgena-eng). Все права на торговые наименования третьих сторон (Taobao, 1688, Tmall, JD.com, Nike, Xiaomi и др.), упомянутые в демо-данных и интерфейсе, принадлежат их владельцам и использованы исключительно в демонстрационных целях.
+Репозиторий опубликован исключительно в качестве портфолио — для изучения кода и демонстрации навыков. Копирование, переиспользование, распространение и создание производных работ (код, дизайн, тексты, изображения) без письменного разрешения автора запрещены.
+
+Файл `LICENSE` намеренно отсутствует: без открытой лицензии по умолчанию действует режим «все права защищены». Все права на торговые наименования третьих сторон (Taobao, 1688, Tmall, JD.com, Nike, Xiaomi и др.), упомянутые в демо-данных и интерфейсе, принадлежат их владельцам и использованы исключительно в демонстрационных целях.
