@@ -14,6 +14,14 @@
 
 Client and admin dashboards, purchase-request creation, delivery status tracking, per-order chat, order consolidation and product photo uploads — all in one application.
 
+## 🚀 Live demo
+
+[![Live Demo](https://img.shields.io/badge/LIVE_DEMO-cargohs54.vercel.app-00C853?style=for-the-badge&logo=vercel&logoColor=white)](https://cargohs54.vercel.app)
+
+The demo is deployed on Vercel (Next.js 16 + Neon Postgres).
+
+**Admin:** `admin@cargohs54.ru` / `admin123` · **Client:** `test@test.ru` / `client123`
+
 > ⚠️ Demo accounts and contact details are fictional. This project was built as a portfolio piece demonstrating the full development cycle.
 
 ---
