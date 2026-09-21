@@ -22,6 +22,10 @@ The demo is deployed on Vercel (Next.js 16 + Neon Postgres).
 
 **Admin:** `admin@cargohs54.ru` / `admin123` · **Client:** `test@test.ru` / `client123`
 
+**Demo client profiles** (password `client123`): `annaivanova@mail.ru` (Anna, Moscow — 3 orders with chat) · `dpetrov@yandex.ru` (Dmitry, St. Petersburg) · `olga.guseva@gmail.com` (Olga, Novosibirsk)
+
+The database contains 7 orders covering every status: New → Approved → Shipped → Delivered / Cancelled, with order items, client-admin chat and manager notes.
+
 > ⚠️ Demo accounts and contact details are fictional. This project was built as a portfolio piece demonstrating the full development cycle.
 
 ---
